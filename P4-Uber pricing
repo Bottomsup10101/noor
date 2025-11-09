@@ -1,0 +1,52 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import r2_score, mean_squared_error
+
+# 1. Load and clean the data
+df=pd.read_csv('uber.csv')
+
+# Drop unwanted columns
+df.drop(columns=['Unnamed: 0', 'key'], inplace=True)
+# Remove missing values
+df.dropna(inplace=True)
+
+df['pickup_datetime']=pd.to_datetime(df['pickup_datetime'])
+
+df['hour']=df['pickup_datetime'].dt.hour
+df['day']=df['pickup_datetime'].dt.day
+df['month']=df['pickup_datetime'].dt.month
+df['year']=df['pickup_datetime'].dt.year
+df['day_of_week']=df['pickup_datetime'].dt.dayofweek
+
+# 3. Calculate distance using Haversine formula
+def haversine(lon1, lat1, lon2, lat2):
+  lon1, lat1, lon2, lat2=map(np.radians, [lon1, lat1, lon2, lat2])
+  dlon, dlat=lon2-lon1, lat2-lat1
+  a=np.sin(dlat/2)**2+np.cos(lat1)*np.cos(lat2)*np.sin(dlon/2)**2
+  c=2*np.arcsin(np.sqrt(a))
+  return 6371*c # in kilometers
+
+df['distance_km']=haversine(df['pickup_longitude'], df['pickup_latitude'],
+df['dropoff_longitude'], df['dropoff_latitude'])
+
+# 4. Remove outliers
+df=df[(df['fare_amount'] > 0) & (df['fare_amount'] < 100)]
+df=df[(df['passenger_count'] > 0) & (df['passenger_count'] <= 6)]
+df=df[df['distance_km'] < 100]
+
+# Keep only NYC-like coordinates
+df=df[(df['pickup_longitude'] > -75) & (df['pickup_longitude'] < -73)]
+df=df[(df['pickup_latitude'] > 40) & (df['pickup_latitude'] < 42)]
+df=df[(df['dropoff_longitude'] > -75) & (df['dropoff_longitude'] < -73)]
+df=df[(df['dropoff_latitude'] > 40) & (df['dropoff_latitude'] < 42)]
+
+# 5. Correlation plot
+features_corr=['fare_amount', 'passenger_count', 'hour', 'day_of_week', 'month', 'year', 'distance_km']
+sns.heatmap(df[features_corr].corr(), annot=True, cmap='coolwarm')
+plt.title("Feature Correlation")
+plt.show()
