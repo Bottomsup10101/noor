@@ -1,5 +1,4 @@
 import pandas as pd
-from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
@@ -7,10 +6,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn import tree
 
-
-iris = load_iris()
-X=pd.DataFrame(iris.data, columns=iris.feature_names)
-y=pd.Series(iris.target, name='species')
+df = pd.read_csv("1 Admission_Predict.csv") # A. Data Pre-processing
+df.columns = df.columns.str.strip()
+df['Admitted'] = (df['Chance of Admit'] > 0.8).astype(int)
+X = df[['GRE Score','TOEFL Score','University Rating','SOP','LOR','CGPA','Research']] # B. Data Preparation (Train-Test Split)
+y = df['Admitted']
 
 print("--- Initial Data Head (First 5 Rows) ---")
 print(X.head())
