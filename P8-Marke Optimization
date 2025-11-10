@@ -1,5 +1,6 @@
 # Q.8) Market Basket Optimization 
 import pandas as pd
+import matplotlib.pyplot as plt
 from mlxtend.preprocessing import TransactionEncoder    # (install this module: )
 from mlxtend.frequent_patterns import apriori, association_rules
 
