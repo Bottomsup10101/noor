@@ -24,6 +24,9 @@ knn = KNeighborsClassifier(n_neighbors=5)
 knn.fit(X_train, y_train)
 knn_pred = knn.predict(X_test)
 
+
+cm = confusion_matrix(y_test, knn_pred)
+print("KNN Confusion Matrix:\n", cm)
 Accuracy = accuracy_score(y_test, knn_pred)
 print("KNN Accuracy: {:.2%}".format(Accuracy))
 Error = 1 - Accuracy
