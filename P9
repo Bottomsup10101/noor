@@ -1,0 +1,78 @@
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
+from sklearn.utils import shuffle
+
+# ==== CONFIG ====
+CSV_TRAIN_PATH = r"C:\Users\Admin\Downloads\archive (4)\mnist_train.csv"
+CSV_TEST_PATH = r"C:\Users\Admin\Downloads\archive (4)\mnist_test.csv"
+N_CLIENTS = 5
+ROUNDS = 5
+NOISE_STD = 0.1 # Noise for differential privacy
+
+# ==== Load CSV ====
+train_df = pd.read_csv(CSV_TRAIN_PATH)
+test_df = pd.read_csv(CSV_TEST_PATH)
+
+X_train = train_df.iloc[:, 1:].values / 255.0
+y_train = train_df.iloc[:, 0].values
+X_test = test_df.iloc[:, 1:].values / 255.0
+y_test = test_df.iloc[:, 0].values
+
+# Shuffle training data
+X_train, y_train = shuffle(X_train, y_train, random_state=42)
+# Split training data among clients
+X_splits = np.array_split(X_train, N_CLIENTS)
+y_splits = np.array_split(y_train, N_CLIENTS)
+
+# ==== Federated Averaging ====
+def federated_average(models):
+  coefs = np.mean([m.coef_ for m in models], axis=0)
+  intercepts = np.mean([m.intercept_ for m in models], axis=0)
+  avg_model = LogisticRegression()
+  avg_model.coef_ = coefs
+  avg_model.intercept_ = intercepts
+  avg_model.classes_ = models[0].classes_
+  return avg_model
+
+# ==== Train Clients ====
+def train_clients(add_dp=False):
+  client_models = []
+    for i in range(N_CLIENTS):
+      model = LogisticRegression(max_iter=1000)
+      model.fit(X_splits[i], y_splits[i])
+      if add_dp:
+        model.coef_ += np.random.normal(0, NOISE_STD, size=model.coef_.shap
+        model.intercept_ += np.random.normal(0, NOISE_STD, size=model.inter
+      client_models.append(model)
+  return client_models
+
+# ==== Federated Learning Loop ====
+def federated_training(add_dp=False):
+  accs = []
+  global_model = LogisticRegression()
+  for rnd in range(ROUNDS):
+      client_models = train_clients(add_dp=add_dp)
+      global_model = federated_average(client_models)
+      preds = global_model.predict(X_test)
+      acc = accuracy_score(y_test, preds)
+      accs.append(acc)
+      print(f"Round {rnd+1} - Accuracy: {acc:.4f} {'(DP)' if add_dp else ''}"
+  return accs
+
+# ==== Run ====
+acc_no_dp = federated_training(add_dp=False)
+acc_with_dp = federated_training(add_dp=True)
+
+# ==== Plot Results ====
+plt.plot(acc_no_dp, label="Without DP")
+plt.plot(acc_with_dp, label="With DP", linestyle="--")
+plt.xlabel("Federated Round")
+plt.ylabel("Test Accuracy")
+plt.title("Federated Learning on MNIST (CSV) with & without Differential Privac
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
