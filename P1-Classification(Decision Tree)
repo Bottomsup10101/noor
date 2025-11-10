@@ -2,36 +2,54 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn import tree
 
-df = pd.read_csv("1 Admission_Predict.csv") # A. Data Pre-processing
+# A. Data Pre-processing
+df = pd.read_csv("1 Admission_Predict.csv")
 df.columns = df.columns.str.strip()
+
+# Creating binary target variable
 df['Admitted'] = (df['Chance of Admit'] > 0.8).astype(int)
-X = df[['GRE Score','TOEFL Score','University Rating','SOP','LOR','CGPA','Research']] # B. Data Preparation (Train-Test Split)
+
+# Features & target
+X = df[['GRE Score','TOEFL Score','University Rating','SOP','LOR','CGPA','Research']]
 y = df['Admitted']
 
 print("--- Initial Data Head (First 5 Rows) ---")
 print(X.head())
-print("\n--- Target Labels (Species) ---")
-print(y.value_counts())
-print(f"Target names: {list(iris.target_names)}")
 
+print("\n--- Target Labels Count ---")
+print(y.value_counts())
+
+print("\n--- Missing Values Count ---")
 print(X.isnull().sum())
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+# B. Train-Test Split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# Model
 model = DecisionTreeClassifier(random_state=42)
 model.fit(X_train, y_train)
 
+# Predictions
 y_pred = model.predict(X_test)
 
-print(f"Accuracy:",accuracy_score(y_test, y_pred))
-print(f"Classification Report:",classification_report(y_test, y_pred))
-print(f"Confusion Matrix:",confusion_matrix(y_test, y_pred))
+# Metrics
+print("\nAccuracy:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
 
-plt.figure(figsize=(12, 8))
-tree.plot_tree(model, feature_names=iris.feature_names, class_names=iris.target_names, filled=True, rounded=True, fontsize=10)
+# Plot decision tree
+plt.figure(figsize=(18, 10))
+tree.plot_tree(
+    model,
+    feature_names=X.columns,
+    class_names=["Not Admitted", "Admitted"],
+    filled=True,
+    rounded=True,
+    fontsize=10
+)
 plt.show()
-
-
